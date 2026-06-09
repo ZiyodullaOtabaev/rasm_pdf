@@ -2,9 +2,12 @@
 Application configuration loaded from environment variables.
 """
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env faylni loyiha root papkasidan yuklash
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(_PROJECT_ROOT / ".env")
 
 # Bot
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
