@@ -1,31 +1,7 @@
-# Environment
 .venv/
-.env
-
-# IDE
 .idea/
-.vscode/
-*.swp
-*.swo
-
-# Python
 __pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
-
-# Database
 bot.db
-*.db
-
-# Downloads
 downloads/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+.env
+*.pyc
