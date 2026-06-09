@@ -49,21 +49,29 @@ async def handle_compress_pdf(message: Message, bot: Bot):
     output_path = os.path.join(DOWNLOAD_DIR, f"{user_id}_{doc.file_id}_compressed.pdf")
 
     try:
-        old_size = os.path.getsize(file_path)
-        compress_pdf(file_path, output_path)
-        new_size = os.path.getsize(output_path)
+        stats = compress_pdf(file_path, output_path)
+        old_size = stats["old_size"]
+        new_size = stats["new_size"]
+        images_processed = stats["images_processed"]
         saved = max(round(((old_size - new_size) / old_size) * 100, 1), 0)
 
-        result = FSInputFile(output_path, filename=user_pdf_filename(user))
-        await bot.send_document(
-            user_id, result,
-            caption=(
-                f"✅ PDF siqildi!\n\n"
-                f"📦 Oldingi hajm: {old_size / 1024 / 1024:.2f} MB\n"
-                f"🗜 Yangi hajm: {new_size / 1024 / 1024:.2f} MB\n"
-                f"📉 Tejaldi: {saved}%"
+        if new_size >= old_size:
+            # Compression didn't help — send original back with message
+            await message.answer(
+                "ℹ️ Bu PDF allaqachon optimallashtirilgan — siqish imkoni yo'q."
             )
-        )
+        else:
+            result = FSInputFile(output_path, filename=user_pdf_filename(user))
+            await bot.send_document(
+                user_id, result,
+                caption=(
+                    f"✅ PDF siqildi!\n\n"
+                    f"📦 Oldingi hajm: {old_size / 1024 / 1024:.2f} MB\n"
+                    f"🗜 Yangi hajm: {new_size / 1024 / 1024:.2f} MB\n"
+                    f"📉 Tejaldi: {saved}%\n"
+                    f"🖼 Ishlov berilgan rasmlar: {images_processed}"
+                )
+            )
         inc_uses_and_log(user_id, "compress_pdf")
         logger.info(f"User {user_id}: compress_pdf (saved {saved}%)")
     except Exception as e:

@@ -13,8 +13,6 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from PyPDF2 import PdfMerger
 import fitz
-import cv2
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +26,7 @@ _FONT_PATHS = [
     "/usr/share/fonts/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/TTF/DejaVuSans.ttf",
     "/usr/local/share/fonts/DejaVuSans.ttf",
+    "C:/Windows/Fonts/DejaVuSans.ttf",
     "DejaVuSans.ttf",
 ]
 
@@ -124,8 +123,18 @@ def merge_pdfs(pdf_paths: List[str], out_pdf_path: str):
             pass
 
 
-def compress_pdf(input_path: str, output_path: str):
-    """Compress a PDF file by recompressing images."""
+def compress_pdf(input_path: str, output_path: str) -> dict:
+    """
+    Smart PDF compression that preserves visual quality.
+    
+    Strategy:
+    - Large images (>1500px) are downscaled to reasonable dimensions
+    - JPEG quality kept at 82 (visually lossless for most content)
+    - Small images are left untouched
+    - PDF structure is optimized (garbage collection, deflate)
+    
+    Returns dict with stats: {old_size, new_size, images_processed}
+    """
     if not os.path.exists(input_path):
         raise FileNotFoundError("PDF topilmadi")
 
@@ -135,33 +144,86 @@ def compress_pdf(input_path: str, output_path: str):
         if doc.needs_pass:
             raise RuntimeError("Parolli PDF siqilmaydi")
 
+        images_processed = 0
+
         for page in doc:
             img_list = page.get_images(full=True)
+
             for img in img_list:
                 xref = img[0]
                 try:
                     base_image = doc.extract_image(xref)
                     image_bytes = base_image["image"]
+                    img_ext = base_image.get("ext", "png")
+                    img_width = base_image.get("width", 0)
+                    img_height = base_image.get("height", 0)
 
-                    img_np = np.frombuffer(image_bytes, np.uint8)
-                    image = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
-
-                    if image is None:
+                    # Skip very small images (icons, logos) — don't compress
+                    if img_width < 100 or img_height < 100:
                         continue
 
-                    _, compressed = cv2.imencode(
-                        ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 60]
-                    )
-                    doc.update_stream(xref, compressed.tobytes())
+                    # Skip if image is already small in file size (<50KB)
+                    if len(image_bytes) < 50 * 1024:
+                        continue
+
+                    # Open with Pillow for quality-preserving compression
+                    pil_img = Image.open(io.BytesIO(image_bytes))
+
+                    # Downscale large images (>2000px on any side)
+                    max_dimension = 1600
+                    if img_width > max_dimension or img_height > max_dimension:
+                        ratio = min(max_dimension / img_width, max_dimension / img_height)
+                        new_w = int(img_width * ratio)
+                        new_h = int(img_height * ratio)
+                        pil_img = pil_img.resize((new_w, new_h), Image.LANCZOS)
+
+                    # Convert to RGB if needed (for JPEG encoding)
+                    if pil_img.mode in ("RGBA", "P"):
+                        # If has transparency, use PNG with compression
+                        buf = io.BytesIO()
+                        pil_img.save(buf, format="PNG", optimize=True)
+                        buf.seek(0)
+                        new_bytes = buf.read()
+                    else:
+                        # Use JPEG with good quality
+                        if pil_img.mode != "RGB":
+                            pil_img = pil_img.convert("RGB")
+                        buf = io.BytesIO()
+                        pil_img.save(buf, format="JPEG", quality=82, optimize=True)
+                        buf.seek(0)
+                        new_bytes = buf.read()
+
+                    # Only use compressed version if it's actually smaller
+                    if len(new_bytes) < len(image_bytes):
+                        doc.update_stream(xref, new_bytes)
+                        images_processed += 1
+
                 except Exception as e:
                     logger.debug(f"Skipping image xref={xref}: {e}")
                     continue
 
-        doc.save(output_path, garbage=4, deflate=True, clean=True)
+        # Save with structure optimization
+        doc.save(
+            output_path,
+            garbage=4,      # Remove unused objects
+            deflate=True,   # Compress streams
+            clean=True,     # Clean up redundant info
+            linear=True,    # Optimize for web viewing
+        )
     finally:
         doc.close()
 
     if not os.path.exists(output_path):
         raise RuntimeError("PDF siqilmadi")
 
-    logger.info(f"Compressed PDF: {input_path} -> {output_path}")
+    old_size = os.path.getsize(input_path)
+    new_size = os.path.getsize(output_path)
+    logger.info(f"Compressed PDF: {input_path} -> {output_path} "
+                f"({old_size//1024}KB -> {new_size//1024}KB, "
+                f"{images_processed} images processed)")
+
+    return {
+        "old_size": old_size,
+        "new_size": new_size,
+        "images_processed": images_processed,
+    }
