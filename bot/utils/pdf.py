@@ -208,7 +208,6 @@ def compress_pdf(input_path: str, output_path: str) -> dict:
             garbage=4,      # Remove unused objects
             deflate=True,   # Compress streams
             clean=True,     # Clean up redundant info
-            linear=True,    # Optimize for web viewing
         )
     finally:
         doc.close()
