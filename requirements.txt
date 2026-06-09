@@ -1,0 +1,10 @@
+aiogram==2.25.1
+Pillow
+reportlab
+python-dotenv
+requests
+PyPDF2==3.0.1
+python-docx
+opencv-python-headless
+numpy
+PyMuPDF
