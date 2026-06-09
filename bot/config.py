@@ -2,15 +2,28 @@
 Application configuration loaded from environment variables.
 """
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
 # .env faylni loyiha root papkasidan yuklash
+# 1) bot/config.py -> parent.parent = loyiha root
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(_PROJECT_ROOT / ".env")
+_ENV_FILE = _PROJECT_ROOT / ".env"
+
+# 2) Agar topilmasa, CWD dan izlaymiz
+if not _ENV_FILE.exists():
+    _ENV_FILE = Path.cwd() / ".env"
+
+# 3) Yuklash
+if _ENV_FILE.exists():
+    load_dotenv(_ENV_FILE, override=True)
+else:
+    # Hech bo'lmasa default load_dotenv()
+    load_dotenv()
 
 # Bot
-BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
+BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip().strip('"').strip("'")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN not set in .env")
 
