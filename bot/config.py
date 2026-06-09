@@ -6,33 +6,48 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# .env faylni loyiha root papkasidan yuklash
-# 1) bot/config.py -> parent.parent = loyiha root
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_ENV_FILE = _PROJECT_ROOT / ".env"
+# .env faylni bir necha joydan izlaymiz
+_THIS_FILE = Path(__file__).resolve()
+_PROJECT_ROOT = _THIS_FILE.parent.parent  # bot/config.py -> parent=bot/ -> parent=project_root
 
-# 2) Agar topilmasa, CWD dan izlaymiz
-if not _ENV_FILE.exists():
-    _ENV_FILE = Path.cwd() / ".env"
+_possible_env_paths = [
+    _PROJECT_ROOT / ".env",
+    Path.cwd() / ".env",
+    Path(os.path.dirname(os.path.abspath(sys.argv[0] if sys.argv[0] else "."))) / ".env",
+]
 
-# 3) Yuklash
-if _ENV_FILE.exists():
-    load_dotenv(_ENV_FILE, override=True)
-else:
-    # Hech bo'lmasa default load_dotenv()
-    load_dotenv()
+_env_loaded = False
+for _env_path in _possible_env_paths:
+    if _env_path.exists():
+        load_dotenv(str(_env_path), override=True)
+        _env_loaded = True
+        print(f"[CONFIG] .env loaded from: {_env_path}")
+        break
+
+if not _env_loaded:
+    load_dotenv()  # oxirgi harakat: default
+    print(f"[CONFIG] WARNING: .env file not found! Searched:")
+    for p in _possible_env_paths:
+        print(f"  - {p} (exists={p.exists()})")
+    print(f"[CONFIG] CWD = {Path.cwd()}")
 
 # Bot
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip().strip('"').strip("'")
 if not BOT_TOKEN:
-    raise RuntimeError("BOT_TOKEN not set in .env")
+    print("\n[ERROR] BOT_TOKEN is empty!")
+    print(f"[DEBUG] All env vars with 'BOT': {[(k,v[:10]+'...') for k,v in os.environ.items() if 'BOT' in k.upper()]}")
+    raise RuntimeError(
+        "BOT_TOKEN not set in .env\n"
+        f"Searched paths: {[str(p) for p in _possible_env_paths]}\n"
+        "Please create .env file with: BOT_TOKEN=your_token_here"
+    )
 
 # Channel
 CHANNEL_USER = os.getenv("CHANNEL_USER", "@xonziyy").strip()
 
 # Limits
 FREE_USES_BEFORE_SUB = int(os.getenv("FREE_USES_BEFORE_SUB", "15").strip() or "15")
-MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", str(20 * 1024 * 1024)))  # 20MB default
+MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", str(20 * 1024 * 1024)))
 
 # AI Upscale
 REAL_ESRGAN_BIN = os.getenv("REAL_ESRGAN_BIN", "").strip()
