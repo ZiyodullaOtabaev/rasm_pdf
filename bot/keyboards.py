@@ -13,8 +13,6 @@ def kb_main() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="🖼 Rasmni PDF qilish", callback_data="act_img_pdf")],
         [InlineKeyboardButton(text="✨ Rasm sifatini oshirish", callback_data="act_upscale")],
         [InlineKeyboardButton(text="📎 PDFlarni bitta qilish", callback_data="act_merge_pdf")],
-        [InlineKeyboardButton(text="🗜 PDF siqish", callback_data="act_compress_pdf")],
-        [InlineKeyboardButton(text="📄 Smart Scan", callback_data="act_smart_scan")],
     ])
 
 

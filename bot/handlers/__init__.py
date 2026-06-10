@@ -8,8 +8,6 @@ from bot.handlers.text_pdf import router as text_pdf_router
 from bot.handlers.img_pdf import router as img_pdf_router
 from bot.handlers.upscale import router as upscale_router
 from bot.handlers.merge_pdf import router as merge_pdf_router
-from bot.handlers.compress import router as compress_router
-from bot.handlers.smart_scan import router as smart_scan_router
 from bot.handlers.admin import router as admin_router
 from bot.handlers.menu import router as menu_router
 
@@ -23,7 +21,5 @@ def get_all_routers() -> list[Router]:
         img_pdf_router,
         upscale_router,
         merge_pdf_router,
-        compress_router,
-        smart_scan_router,
-        menu_router,  # menu/cancel should be last
+        menu_router,
     ]

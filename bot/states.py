@@ -8,10 +8,7 @@ STATE_WAIT_TEXT = "wait_text"
 STATE_WAIT_IMG_PDF = "wait_img_pdf"
 STATE_WAIT_UPSCALE = "wait_upscale"
 STATE_WAIT_PDF_MERGE = "wait_pdf_merge"
-STATE_WAIT_WORD = "wait_word"
 STATE_WAIT_BROADCAST = "wait_broadcast"
-STATE_WAIT_SMART_SCAN = "wait_smart_scan"
-STATE_WAIT_COMPRESS_PDF = "wait_compress_pdf"
 
 # In-memory state storage
 USER_STATE: Dict[int, str] = {}

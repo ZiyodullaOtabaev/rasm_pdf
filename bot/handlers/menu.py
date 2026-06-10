@@ -10,9 +10,8 @@ from bot.config import CHANNEL_USER, FREE_USES_BEFORE_SUB
 from bot.database import upsert_user, get_uses
 from bot.keyboards import kb_main, kb_subscribe
 from bot.states import (
-    set_state, get_state, STATE_NONE, STATE_WAIT_TEXT,
+    set_state, STATE_NONE, STATE_WAIT_TEXT,
     STATE_WAIT_IMG_PDF, STATE_WAIT_UPSCALE, STATE_WAIT_PDF_MERGE,
-    STATE_WAIT_SMART_SCAN, STATE_WAIT_COMPRESS_PDF,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,14 +30,11 @@ async def check_subscription(bot: Bot, user_id: int) -> bool:
         member = await bot.get_chat_member(chat_id=CHANNEL_USER, user_id=user_id)
         return member.status != "left"
     except Exception:
-        return True  # If check fails, allow access
+        return True
 
 
 async def enforce_subscription(bot: Bot, user_id: int) -> bool:
-    """
-    Check if user can use the service.
-    Returns True if allowed, False if blocked.
-    """
+    """Check if user can use the service."""
     uses = get_uses(user_id)
     if uses < FREE_USES_BEFORE_SUB:
         return True
@@ -101,10 +97,9 @@ async def cb_text_pdf(call: CallbackQuery, bot: Bot):
     if not await enforce_subscription(bot, user.id):
         return
     set_state(user.id, STATE_WAIT_TEXT)
-    await call.message.edit_text("📝 Matn yuboring (PDF qilib qaytaraman).",
-                                  reply_markup=None)
     from bot.keyboards import kb_cancel
-    await bot.send_message(user.id, "Matn kutilmoqda...", reply_markup=kb_cancel())
+    await bot.send_message(user.id, "📝 Matn yuboring (PDF qilib qaytaraman).",
+                           reply_markup=kb_cancel())
 
 
 @router.callback_query(F.data == "act_img_pdf")
@@ -146,33 +141,4 @@ async def cb_merge_pdf(call: CallbackQuery, bot: Bot):
     set_state(user.id, STATE_WAIT_PDF_MERGE)
     from bot.keyboards import kb_cancel
     await bot.send_message(user.id, "📎 2 ta yoki undan ko'p PDF yuboring.",
-                           reply_markup=kb_cancel())
-
-
-@router.callback_query(F.data == "act_compress_pdf")
-async def cb_compress_pdf(call: CallbackQuery, bot: Bot):
-    """Start PDF compress flow."""
-    await call.answer()
-    user = call.from_user
-    upsert_user(user.id, user.username, user.first_name, user.last_name)
-    if not await enforce_subscription(bot, user.id):
-        return
-    set_state(user.id, STATE_WAIT_COMPRESS_PDF)
-    from bot.keyboards import kb_cancel
-    await bot.send_message(user.id, "🗜 PDF yuboring. Men hajmini kichraytiraman.",
-                           reply_markup=kb_cancel())
-
-
-@router.callback_query(F.data == "act_smart_scan")
-async def cb_smart_scan(call: CallbackQuery, bot: Bot):
-    """Start smart scan flow."""
-    await call.answer()
-    user = call.from_user
-    upsert_user(user.id, user.username, user.first_name, user.last_name)
-    if not await enforce_subscription(bot, user.id):
-        return
-    set_state(user.id, STATE_WAIT_SMART_SCAN)
-    from bot.keyboards import kb_cancel
-    await bot.send_message(user.id,
-                           "📄 Document rasmini yuboring. Men uni professional scan qilib beraman.",
                            reply_markup=kb_cancel())
