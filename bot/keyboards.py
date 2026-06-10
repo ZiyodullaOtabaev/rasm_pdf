@@ -33,16 +33,39 @@ def kb_subscribe() -> InlineKeyboardMarkup:
 
 
 def kb_admin() -> InlineKeyboardMarkup:
-    """Admin panel keyboard."""
+    """Admin panel keyboard - comprehensive."""
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🏆 TOP-30", callback_data="admin_top30"),
+            InlineKeyboardButton(text="📊 Statistika", callback_data="admin_stats"),
             InlineKeyboardButton(text="📈 7 kun grafik", callback_data="admin_chart7"),
+        ],
+        [
+            InlineKeyboardButton(text="📉 30 kun grafik", callback_data="admin_chart30"),
+            InlineKeyboardButton(text="⏰ Soatlik", callback_data="admin_hourly"),
+        ],
+        [
+            InlineKeyboardButton(text="🏆 TOP-30", callback_data="admin_top30"),
+            InlineKeyboardButton(text="🔄 Retention", callback_data="admin_retention"),
         ],
         [
             InlineKeyboardButton(text="🟢 Aktiv 24h", callback_data="admin_active24"),
             InlineKeyboardButton(text="🆕 Yangi 24h", callback_data="admin_new24"),
         ],
+        [
+            InlineKeyboardButton(text="📋 Funksiya stat", callback_data="admin_actions"),
+            InlineKeyboardButton(text="📜 Broadcast tarix", callback_data="admin_bc_history"),
+        ],
+        [
+            InlineKeyboardButton(text="🔍 User qidirish", callback_data="admin_search"),
+            InlineKeyboardButton(text="📢 Broadcast", callback_data="admin_broadcast"),
+        ],
+    ])
+
+
+def kb_admin_back() -> InlineKeyboardMarkup:
+    """Back to admin panel."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⬅️ Admin panel", callback_data="admin_back")],
     ])
 
 
